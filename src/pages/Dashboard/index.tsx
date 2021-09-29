@@ -20,6 +20,7 @@ interface Repository {
 const Dashboard: React.FC = () => {
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [newRepo, setNewRepo] = useState('');
+  const [inputError, setInputError] = useState('');
 
   async function handleAddRepository(
     event: FormEvent<HTMLFormElement>
@@ -27,12 +28,23 @@ const Dashboard: React.FC = () => {
 
     event.preventDefault();
 
-    const response = await api.get<Repository>(`repos/${newRepo}`);
+    if (!newRepo) {
+      return setInputError('Digite o autor/nome do repositório');
+    }
 
-    const repository = response.data;
+    try {
 
-    setRepositories([...repositories, repository]);
-    setNewRepo("");
+      const response = await api.get<Repository>(`repos/${newRepo}`);
+
+      const repository = response.data;
+
+      setRepositories([...repositories, repository]);
+      setInputError("");
+      return setNewRepo("");
+
+    } catch (err) {
+      return setInputError('Erro na busca por esse repositório');
+    }
   }
 
   return (
@@ -42,7 +54,7 @@ const Dashboard: React.FC = () => {
 
     <S.Title>Explore repositórios no Github</S.Title>
 
-    <S.Form onSubmit={handleAddRepository}>
+    <S.Form hasError={!!inputError} onSubmit={handleAddRepository}>
       <input
         value={newRepo}
         onChange={(e) =>
@@ -51,6 +63,7 @@ const Dashboard: React.FC = () => {
       />
       <button type={"submit"}>Pesquisar</button>
     </S.Form>
+    {inputError && <S.Error>{inputError}</S.Error>}
 
     <S.Repositories>
       {repositories.map(repository => (
